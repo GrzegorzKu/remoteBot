@@ -140,9 +140,9 @@ class Joystick extends EventEmitter {
 	_atachTouchEvents() {
 		let self = this
 		this.ctx.canvas.addEventListener("touchstart", (e) => {
-			//let t = self._nearestTouch(e.touches)
-			this._touchID = e.touches.length - 1
-			let t = e.touches[this._touchID]
+			let t = self._nearestTouch(e.touches)
+			//this._touchID = e.touches.length - 1
+			//let t = e.touches[this._touchID]
 
 			var mouseEvent = new MouseEvent("mousedown", {
 				clientX: t.clientX,
@@ -159,8 +159,8 @@ class Joystick extends EventEmitter {
 		}, false)
 
 		this.ctx.canvas.addEventListener("touchmove", (e) => {
-			//let t = self._nearestTouch(e.touches)
-			let t = e.touches[this._touchID]
+			let t = self._nearestTouch(e.touches)
+			//let t = e.touches[this._touchID]
 			var mouseEvent = new MouseEvent("mousemove", {
 				clientX: t.clientX,
 				clientY: t.clientY

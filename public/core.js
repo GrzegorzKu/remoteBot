@@ -22,6 +22,9 @@ function main() {
 		3 * canvas.width / 4,
 		canvas.height - canvas.width / 4 * 0.4,
 		canvas.width / 4 * 0.3)
+	direction.min = -1
+	direction.max = 1
+	direction.resetValue = 0
 
 	var wsocketEngine = new WSocketEngine("ws://" + window.location.hostname + ":3001")
 

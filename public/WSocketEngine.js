@@ -35,7 +35,7 @@ class WSocketEngine {
 		}
 	}
 	_onOpen(e) {
-
+		console.log("connected to " + this._address)
 	}
 	_onClose(e) {
 		console.log("websocket connection was closed")
@@ -57,7 +57,7 @@ class WSocketEngine {
 	}
 	_loop() {
 		if (this._toSend) {
-			if (this._websocket !== null) {
+			if (this._websocket !== null && this._websocket.readyState == 1) {	//opened websocket
 				let mes = this._prepare_message()
 				this._websocket.send(mes)
 				this._toSend = false
