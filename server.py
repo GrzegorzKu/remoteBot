@@ -115,7 +115,7 @@ def setupPins():
     pwm_la = OrangePwm(100, left_a)
     pwm_lb = OrangePwm(100, left_b)
     pwm_ra = OrangePwm(100, right_a)
-    pwm_ra = OrangePwm(100, right_b)
+    pwm_rb = OrangePwm(100, right_b)
 
     for x in [pwm_la, pwm_lb, pwm_ra, pwm_rb]:
         x.start(0)
