@@ -5,32 +5,40 @@ import threading
 import time
 import json
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
-from wiringpi import *
+from pyA20.gpio import gpio, port
+from orangepwm import *
 
 www_port = 3000
 ws_port = 3001
 
-www_server = None
-ws_server = None
-
 run_www = True
 run_ws = True
 
-#pin numbers
-right_enable = 17
-right_a = 27
-right_b = 22
-left_enable = 10
-left_a = 9
-left_b = 11
+www_server = None
+ws_server = None
 
-#speed values
+# pin numbers
+right_enable = port.PA1  # 0
+left_enable = port.PC0  # 12
+
+right_a = port.PA0  # 2
+right_b = port.PA3  # 3
+left_a = port.PC1  # 13
+left_b = port.PC2  # 14
+
+# speed values
 rangemax = 100
 forward_speed = 100
 backward_speed = 100
-turn_speed = 100#speed values
+turn_speed = 100
 forward_speed = 100
 
+connected = False
+
+pwm_la = None
+pwm_lb = None
+pwm_ra = None
+pwm_lb = None
 
 Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
 
@@ -39,20 +47,23 @@ class SimpleEcho(WebSocket):
 
     def handleMessage(self):
         # echo message back to client
-        #self.sendMessage(self.data)
+        # self.sendMessage(self.data)
         parseddata = json.loads(self.data)
 
         speed = parseddata["accelerate"]
         rotation = parseddata["direction"]
-        #print speed, type(speed)
+        # print speed, type(speed)
         Drive(speed, rotation)
-        
 
     def handleConnected(self):
         print(self.address, 'connected')
+        connected = True
 
     def handleClose(self):
         print(self.address, 'closed')
+
+        connected = False
+        stop()
 
 
 def WWWServer_thandler(lock):
@@ -94,84 +105,105 @@ def shutdown():
         print "Shutdown WS server"
         ws_server.close()
 
+
 def setupPins():
-    wiringPiSetupGpio()
-    pinMode(left_enable, OUTPUT)
-    pinMode(left_a, OUTPUT)
-    pinMode(left_b, OUTPUT)
-    pinMode(right_enable, OUTPUT)
-    pinMode(right_a, OUTPUT)
-    pinMode(right_b, OUTPUT)
-    
-    softPwmCreate(left_a, 0, rangemax)
-    softPwmCreate(left_b, 0, rangemax)
-    softPwmCreate(right_a, 0, rangemax)
-    softPwmCreate(right_b, 0, rangemax)
+    gpio.init()
+
+    for x in [right_enable, left_enable]:
+        gpio.setcfg(x, gpio.OUTPUT)
+
+    pwm_la = OrangePwm(100, left_a)
+    pwm_lb = OrangePwm(100, left_b)
+    pwm_ra = OrangePwm(100, right_a)
+    pwm_ra = OrangePwm(100, right_b)
+
+    for x in [pwm_la, pwm_lb, pwm_ra, pwm_rb]:
+        x.start(0)
+
 
 def Drive(speed, rotation):
-    digitalWrite(left_enable, HIGH)
-    digitalWrite(right_enable, HIGH)
+    print speed, rotation
 
-    #stop
+    gpio.output(left_enable, gpio.HIGH)
+    gpio.output(right_enable, gpio.HIGH)
+
     if speed == 0:
-        Stop()
+        # full rotate
+        if rotation < 0.5:
+            print "Left"
+            power = int((rotation-0.5) * -2 * turn_speed)
+
+            pwm_la.changeDutyCycle(0)
+            pwm_lb.changeDutyCycle(power)
+            pwm_ra.changeDutyCycle(power)
+            pwm_rb.changeDutyCycle(0)
+
+        elif rotation > 0.5:
+            print "Right"
+            power = int((rotation - 0.5) * 2 * turn_speed)
+
+            pwm_la.changeDutyCycle(power)
+            pwm_lb.changeDutyCycle(0)
+            pwm_ra.changeDutyCycle(0)
+            pwm_rb.changeDutyCycle(power)
+
+        # just stop
+        else:
+            Stop()
         return
 
-    #left
-    if rotation < 0:
-        r = rotation * -1
-        #left forward
+    speed = int(speed * forward_speed)
+
+    print "Speed"
+
+    # left
+    if rotation < 0.5:
+        print "Left"
         if speed > 0:
-            s = forward_speed * speed
-            softPwmWrite(left_a, int(s * (1-r)))
-            softPwmWrite(left_b, 0)
-            softPwmWrite(right_a, int(s * r))
-            softPwmWrite(right_b, 0)
-        #left backward
-        elif speed < 0:
-            s = forward_speed * speed * -1
-            softPwmWrite(left_a, 0)
-            softPwmWrite(left_b, int(s * (1-r)))
-            softPwmWrite(right_a, 0)
-            softPwmWrite(right_b, int(s * r))
-    #right
-    elif rotation > 0:
-        r = rotation
-        #right forward
+            pwm_la.changeDutyCycle(int(speed * 0.3))
+            pwm_lb.changeDutyCycle(0)
+            pwm_ra.changeDutyCycle(speed)
+            pwm_rb.changeDutyCycle(0)
+        else:
+            pwm_la.changeDutyCycle(0)
+            pwm_lb.changeDutyCycle(-int(speed * 0.3))
+            pwm_ra.changeDutyCycle(0)
+            pwm_rb.changeDutyCycle(-speed)
+    # right
+    elif rotation > 0.5:
+        print "Right"
         if speed > 0:
-            s = forward_speed * speed
-            softPwmWrite(left_a, int(s * r))
-            softPwmWrite(left_b, 0)
-            softPwmWrite(right_a, int(s * (1-r)))
-            softPwmWrite(right_b, 0)
-        #right backward
-        elif speed < 0:
-            s = forward_speed * speed * -1
-            softPwmWrite(left_a, 0)
-            softPwmWrite(left_b, int(s * r))
-            softPwmWrite(right_a, 0)
-            softPwmWrite(right_b, int(s * (1-r)))
-    #middle
+            pwm_la.changeDutyCycle(speed)
+            pwm_lb.changeDutyCycle(0)
+            pwm_ra.changeDutyCycle(int(speed * 0.3))
+            pwm_rb.changeDutyCycle(0)
+        else:
+            
+            pwm_la.changeDutyCycle(0)
+            pwm_lb.changeDutyCycle(-speed)
+            pwm_ra.changeDutyCycle(0)
+            pwm_rb.changeDutyCycle(-int(speed * 0.3))
+    # straight
     else:
-        # forward
+        print "Straight"
         if speed > 0:
-            s = forward_speed * speed
-            softPwmWrite(left_a, int(s))
-            softPwmWrite(left_b, 0)
-            softPwmWrite(right_a, int(s))
-            softPwmWrite(right_b, 0)
-        # backward
-        elif speed < 0:
-            s = forward_speed * speed * -1
-            softPwmWrite(left_a, 0)
-            softPwmWrite(left_b, int(s))
-            softPwmWrite(right_a, 0)
-            softPwmWrite(right_b, int(s))
-        
-        
+            print "GO", speed
+            pwm_la.changeDutyCycle(speed)
+            pwm_lb.changeDutyCycle(0)
+            pwm_ra.changeDutyCycle(speed)
+            pwm_rb.changeDutyCycle(0)
+        else:
+            print "BACK", speed
+            pwm_la.changeDutyCycle(0)
+            pwm_lb.changeDutyCycle(-speed)
+            pwm_ra.changeDutyCycle(0)
+            pwm_rb.changeDutyCycle(-speed)
+
+
 def Stop():
-    digitalWrite(left_enable, LOW)
-    digitalWrite(right_enable, LOW)
+    gpio.output(left_enable, gpio.LOW)
+    gpio.output(right_enable, gpio.LOW)
+
 
 def main():
     setupPins()
