@@ -140,9 +140,8 @@ class Joystick extends EventEmitter {
 	_atachTouchEvents() {
 		let self = this
 		this.ctx.canvas.addEventListener("touchstart", (e) => {
-			let t = self._nearestTouch(e.touches)
-			//this._touchID = e.touches.length - 1
-			//let t = e.touches[this._touchID]
+			this._touchID = self._nearestTouch(e.touches)
+			let t = e.touches[this._touchID]
 
 			var mouseEvent = new MouseEvent("mousedown", {
 				clientX: t.clientX,
@@ -154,13 +153,15 @@ class Joystick extends EventEmitter {
 		}, false)
 
 		this.ctx.canvas.addEventListener("touchend", (e) => {
+			if (e.touches[this._touchID])
+				return
+
 			var mouseEvent = new MouseEvent("mouseup", {})
 			self._onUp.bind(self, mouseEvent)()
 		}, false)
 
 		this.ctx.canvas.addEventListener("touchmove", (e) => {
-			let t = self._nearestTouch(e.touches)
-			//let t = e.touches[this._touchID]
+			let t = e.touches[this._touchID]
 			var mouseEvent = new MouseEvent("mousemove", {
 				clientX: t.clientX,
 				clientY: t.clientY
@@ -175,7 +176,8 @@ class Joystick extends EventEmitter {
 		this._emit("changeState", state)
 	}
 	_nearestTouch(touches) {
-		let min = Infinity, minId = -1
+		let min = Infinity,
+			minId = -1
 		for (let i = 0; i < touches.length; i++) {
 			let c = this._distance(this.x, this.y, touches[i].clientX, touches[i].clientY)
 			if (c < min) {
@@ -186,34 +188,80 @@ class Joystick extends EventEmitter {
 		if (minId == -1)
 			throw "Cant find properly touch"
 		else
-			return touches[minId]
+			return minId
 	}
 
 	//getter setter
-	get x() { return this._cx }
-	set x(x) { this._cx = x }
-	get y() { return this._cy }
-	set y(y) { this._cy = y }
+	get x() {
+		return this._cx
+	}
+	set x(x) {
+		this._cx = x
+	}
+	get y() {
+		return this._cy
+	}
+	set y(y) {
+		this._cy = y
+	}
 	//get [x,y]
-	get position() { return [this.x, this.y] }
+	get position() {
+		return [this.x, this.y]
+	}
 	//set [x,y]
-	set position(p) { [this.x, this.y] = p }
-	get size() { return this._size }
-	set size(s) { this._size = s }
-	get min() { return this._min }
-	set min(m) { this._min = m }
-	get max() { return this._max }
-	set max(m) { this._max = m }
-	get color() { return this._color }
-	set color(c) { this._color = c }
-	get stroke() { return this._stroke }
-	set stroke(s) { this._stroke = s }
-	get strokeWidth() { return this._strokeWidth }
-	set strokeWidth(sw) { this._strokeWidth = sw }
+	set position(p) {
+		[this.x, this.y] = p
+	}
+	get size() {
+		return this._size
+	}
+	set size(s) {
+		this._size = s
+	}
+	get min() {
+		return this._min
+	}
+	set min(m) {
+		this._min = m
+	}
+	get max() {
+		return this._max
+	}
+	set max(m) {
+		this._max = m
+	}
+	get color() {
+		return this._color
+	}
+	set color(c) {
+		this._color = c
+	}
+	get stroke() {
+		return this._stroke
+	}
+	set stroke(s) {
+		this._stroke = s
+	}
+	get strokeWidth() {
+		return this._strokeWidth
+	}
+	set strokeWidth(sw) {
+		this._strokeWidth = sw
+	}
 	//get value of joystick
-	get value() { return [this._vx, this._vy] }
-	get resetValueX() { return this._resetValueX }
-	set resetValueX(v) { this._resetValueX = v }
-	get resetValueY() { return this._resetValueY }
-	set resetValueY(v) { this._resetValueY = v }
+	get value() {
+		return [this._vx, this._vy]
+	}
+	get resetValueX() {
+		return this._resetValueX
+	}
+	set resetValueX(v) {
+		this._resetValueX = v
+	}
+	get resetValueY() {
+		return this._resetValueY
+	}
+	set resetValueY(v) {
+		this._resetValueY = v
+	}
 }

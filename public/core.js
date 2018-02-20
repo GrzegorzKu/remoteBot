@@ -4,7 +4,7 @@ function roundTo(n, p) {
 }
 
 function main() {
-	var canvas = /** @type {HTMLCanvasElement} */  (document.getElementById("mainCanv"))
+	var canvas = /** @type {HTMLCanvasElement} */ (document.getElementById("mainCanv"))
 	var ctx = canvas.getContext("2d")
 
 	canvas.width = window.innerWidth
@@ -18,18 +18,21 @@ function main() {
 	accelerate.max = 1
 	accelerate.resetValue = 0
 
+
 	var direction = new HorrizontalJoystick(ctx,
 		3 * canvas.width / 4,
 		canvas.height - canvas.width / 4 * 0.4,
 		canvas.width / 4 * 0.3)
-	direction.min = -1
-	direction.max = 1
-	direction.resetValue = 0
 
 	var wsocketEngine = new WSocketEngine("ws://" + window.location.hostname + ":3001")
+	//var wsocketEngine = new WSocketEngine("ws://10.10.10.198:3001")
+	//var wsocketEngine = new WSocketEngine("ws://localhost:3001")
 
 	var acc_v = 0
-	var dir_v = 0
+	var dir_v = 0.5
+
+	wsocketEngine.accelerate = acc_v
+	wsocketEngine.direction = dir_v
 
 	function draw() {
 		ctx.fillStyle = "blue"

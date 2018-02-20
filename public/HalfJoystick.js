@@ -66,7 +66,7 @@ class HorrizontalJoystick extends Joystick {
 	get color2() { return this._color2 }
 	set color2(c) { this._color2 = c }
 	get resetValue() {return this._resetValueX}
-	set resetValue(v) {this._resetValueX = X}
+	set resetValue(v) {this._resetValueX = v}
 }
 
 class VerticalJoystick extends Joystick {
